@@ -15,15 +15,17 @@ namespace BossMod.AI
         private bool _forbidActions;
         private bool _afkMode;
         private bool _followMaster; // if true, our navigation target is master rather than primary target - this happens e.g. in outdoor or in dungeons during gathering trash
+        private bool _selfMaster;
         private float _maxCastTime;
         private WPos _masterPrevPos;
         private WPos _masterMovementStart;
         private DateTime _masterLastMoved;
 
-        public AIBehaviour(AIController ctrl, Autorotation autorot)
+        public AIBehaviour(AIController ctrl, Autorotation autorot, bool selfMaster)
         {
             _autorot = autorot;
             _ctrl = ctrl;
+            _selfMaster = selfMaster; // Add selfMaster as a parameter
         }
 
         public void Dispose()
@@ -35,10 +37,19 @@ namespace BossMod.AI
             if (player.IsDead || _ctrl.InCutscene)
                 return;
 
-            // keep master in focus
-            FocusMaster(master);
+            // Check if we should follow the player's character or someone else's based on _selfMaster
+            if (_selfMaster)
+            {
+                // Always follow the player's character
+                _followMaster = master == player;
+            }
+            else
+            {
+                // Keep master in focus
+                FocusMaster(master);
+            }
 
-            _afkMode = !master.InCombat && (_autorot.WorldState.CurrentTime - _masterLastMoved).TotalSeconds > 10;
+                _afkMode = !master.InCombat && (_autorot.WorldState.CurrentTime - _masterLastMoved).TotalSeconds > 10;
             bool forbidActions = _forbidActions || _ctrl.IsMounted || _afkMode || _autorot.ClassActions == null || _autorot.ClassActions.AutoAction >= CommonActions.AutoActionFirstCustom;
 
             CommonActions.Targeting target = new();

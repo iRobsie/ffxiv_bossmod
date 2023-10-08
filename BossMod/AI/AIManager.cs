@@ -59,6 +59,7 @@ namespace BossMod.AI
         {
             ImGui.TextUnformatted($"AI: {(_beh != null ? "on" : "off")}, master={_autorot.WorldState.Party[_masterSlot]?.Name}");
             ImGui.TextUnformatted($"Navi={_controller.NaviTargetPos} / {_controller.NaviTargetRot}{(_controller.ForceFacing ? " forced" : "")}");
+            ImGui.Text($"Follow Self: {(_config.SelfMaster ? "Enabled" : "Disabled")}"); // Display the Follow Self state
             _beh?.DrawDebug();
             if (ImGui.Button("Reset"))
                 SwitchToIdle();
@@ -69,7 +70,19 @@ namespace BossMod.AI
                 int leaderSlot = leader != null ? _autorot.WorldState.Party.ContentIDs.IndexOf((ulong)leader.ContentId) : -1;
                 SwitchToFollow(leaderSlot >= 0 ? leaderSlot : PartyState.PlayerSlot);
             }
+            ImGui.SameLine();
+            if (ImGui.Button(_config.SelfMaster ? "Disable Follow Self" : "Enable Follow Self"))
+            {
+                _config.SelfMaster = !_config.SelfMaster; // Toggle the state of SelfMaster
+                if (_config.SelfMaster && _masterSlot == -1)
+                {
+                    SwitchToFollow(PartyState.PlayerSlot);
+                }
+                // Add any additional code you need to handle "Follow Self" here
+            }
         }
+
+
 
         private void SwitchToIdle()
         {
@@ -83,9 +96,23 @@ namespace BossMod.AI
         private void SwitchToFollow(int masterSlot)
         {
             SwitchToIdle();
-            _masterSlot = masterSlot;
-            _beh = new AIBehaviour(_controller, _autorot);
+
+            // Check if "Follow Self" is enabled
+            if (_config.SelfMaster == true)
+            {
+                // Set the masterSlot to the player's slot
+                _masterSlot = PartyState.PlayerSlot;
+            }
+            else
+            {
+                // Set the masterSlot to follow the provided masterSlot (leader or another party member)
+                _masterSlot = masterSlot;
+            }
+
+            // Create the AIBehaviour with the updated _config.SelfMaster value
+            _beh = new AIBehaviour(_controller, _autorot, _config.SelfMaster);
         }
+
 
         private int FindPartyMemberSlotFromSender(SeString sender)
         {
