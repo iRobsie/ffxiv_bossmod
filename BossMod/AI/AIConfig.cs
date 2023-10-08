@@ -8,5 +8,8 @@
 
         [PropertyDisplay("Broadcast keypresses to other windows")]
         public bool BroadcastToSlaves = false;
+
+        [PropertyDisplay("Set self as master?")]
+        public bool SelfMaster = false;
     }
 }
